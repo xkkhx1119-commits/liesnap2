@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>AI 기반 위험성평가</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body{
+      margin:0;
+      background:#0f1115;
+      font-family: system-ui, "Noto Sans KR";
+      color:#fff;
+    }
+    .screen{display:none;}
+    .screen.active{display:block;}
+
+    .container{
+      max-width:480px;
+      margin:0 auto;
+      padding:24px 16px;
+    }
+    h1{text-align:center;}
+    .subtitle{
+      text-align:center;
+      color:#b5b8c5;
+      margin-bottom:24px;
+    }
+
+    button{
+      width:100%;
+      padding:16px;
+      border-radius:14px;
+      border:none;
+      background:#2f54eb;
+      color:#fff;
+      font-size:16px;
+      cursor:pointer;
+    }
+
+    .card{
+      background:#151823;
+      border-radius:14px;
+      padding:14px;
+      margin-bottom:12px;
+    }
+
+    .risk-level{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:13px;
+    }
+    .상{background:#ff4d4f;}
+    .중{background:#faad14;}
+    .하{background:#52c41a;}
+  </style>
+</head>
+
+<body>
+
+<section id="upload" class="screen active">
+  <div class="container">
+    <h1>AI 기반 위험성평가</h1>
+    <div class="subtitle">AI와 함께 현장의 위험을 관리하세요</div>
+
+    <input id="fileInput" type="file" accept="image/*" hidden>
+    <button onclick="selectImage()">📷 사진 업로드하여 분석하기</button>
+  </div>
+</section>
+
+<section id="result" class="screen">
+  <div class="container">
+    <h1>위험성평가 결과</h1>
+    <div id="results"></div>
+    <button style="background:#3a3f55" onclick="goBack()">← 다시 분석하기</button>
+  </div>
+</section>
+
+<script>
+  const fileInput = document.getElementById("fileInput");
+
+  function selectImage(){
+    fileInput.click();
+  }
+
+  fileInput.onchange = async () => {
+    const file = fileInput.files[0];
+    if(!file) return;
+
+    show("result");
+    document.getElementById("results").innerHTML = "AI 분석 중입니다...";
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch("/analyze", {
+      method:"POST",
+      body:formData
+    });
+
+    const data = await res.json();
+    renderResult(data);
+  };
+
+  function renderResult(data){
+    const container = document.getElementById("results");
+    container.innerHTML = "";
+
+    data.risks.forEach(risk => {
+      container.innerHTML += `
+        <div class="card">
+          <strong>${risk.name}</strong><br><br>
+          ${risk.description}<br><br>
+          <span class="risk-level ${risk.risk_level}">${risk.risk_level}</span><br><br>
+          <strong>예상 결과</strong><br>
+          ${risk.consequence}<br><br>
+          <strong>감소대책</strong><br>
+          ${risk.mitigation}
+        </div>
+      `;
+    });
+  }
+
+  function show(id){
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+  }
+
+  function goBack(){
+    show("upload");
+  }
+</script>
+
+</body>
+</html>
